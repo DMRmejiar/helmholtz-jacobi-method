@@ -261,7 +261,7 @@ int main(int argc, char* argv[])
     r1 = omp_get_wtime();
     jacobi(n, m, dx, dy, alpha, relax, u,f, tol, mits, n_threads);
     r1 = omp_get_wtime() - r1;
-    printf("%12.6f"\n, r1);
+    printf("%12.6f\n", r1);
     printf("%12.6g\n",
     mits*(m-2)*(n-2)*0.000001*13 / r1);
     error_check(n, m, alpha, dx, dy, u, f);
