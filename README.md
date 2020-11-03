@@ -2,43 +2,6 @@
 
 - David Mejía Restrepo
 
-## Introducción
-El algoritmo viene del metodo de Monte Carlo que se puede usar para calcular un aproximado el numero *Pi*. **¿Cómo lo hace?** se tiene un cuadraro de lado *2r* un circulo dentro del cuadrado de radio *r*, luego se toman puntos aleatorios dentro del cuadrado y se revisa si el punto esta dentro o no del circulo[*Figura 1*], ahora para realizar el calculo de *Pi* se hace referencia a la formula en la [*Figura 2*].
-<div align='center'>
-    </br><img src='img/estimating-pi-monte-carlo-method.png' alt="Simulación metodo monte carlo" width=50%>
-    </br><i>Figura 1. Ilustración metodo Monte Carlo.</i>
-    </br></br><img src='img/formula-monte-carlo.png' alt="Formula metodo monte carlo" width=70%>
-    </br><i>Figura 2. Formula metodo Monte Carlo.</i>
-    </br></br>
-</div>
-
-El algoritmo en la *Figura 3* se encarga de generar **p** cantidad de puntos con unas cordenadas dadas en **x** y **y**, luego se asegura que la hipotenusa del triangulo rectangulo que forman estos puntos sea menor o igual a 1 y de esta forma asegurar que este dentro del circulo, luego si esto se cumple, se encarga de sumar 1 a **counter** para saber cuantos puntos se obtuvieron dentro del circulo. [*Figura 4*]
-
-``` c
-double montecarlo_seq (int p) {  
-  int i, counter = 0;
-  double x, y, z, pi;
-
-  // Computation of pi
-  for(i = 0; i < p; ++i) {
-    x = (double)rand() / RAND_MAX;
-    y = (double)rand() / RAND_MAX;
-    z = x * x + y * y;
-    if( z <= 1 ) counter++;
-  }
-  pi = (double) counter / p * 4;
-
-  return pi;
-}
-``` 
-*Figura 3. Código Secuencial Monte Carlo.*
-
-<div align='center'>
-    <img src='img/code-monte-carlo.gif' alt="Calculo del metodo monte carlo" width=50%>
-    </br><i>Figura 4. Cálculo del metodo Monte Carlo.</i>
-    </br></br>
-</div>
-
 ## Método
 
 Para realizar la paralelización del metodo Jacobi, se utilizo la API de **OpenMP**, buscando la mejor distribucion de los datos entre los hilos para alcanzar el maximo desempeño posible por este metodo.
@@ -97,7 +60,7 @@ void jacobi ( int n, int m, double dx, double dy, double alpha, double omega, do
 ```
 *Figura 1. Funcion secuencial jacobi.*
 
-Haciendo pruebas y analizando el problema se realizaron multipes codigos parallelos abordando diferentes posibles soluciones al problema como un paralelismo utilizando *tasks* y asignando una fraccion de los ciclos a cada hilo, en estas se abordo paralelizar las iteraciones realizdas en la función en *while (k <= maxit && error > tol)* y en el ciclo for correspndiente a *compute stencil, residual and update*. Despues de analizar los multiples metodos posibles se opto por no utilizar *tasks* y por paralelizar unicamente el ciclo for correspondiente a *compute stencil, residual and update* dado que es el que presentaba un mejor desempeño. La paralelizacion de esta seccion se muestra en la *figura 2*.
+Haciendo pruebas y analizando el problema se realizaron multipes codigos parallelos abordando diferentes posibles soluciones al problema como un paralelismo utilizando *tasks* y asignando una fraccion de los ciclos a cada hilo, en estas se abordo paralelizar las iteraciones realizdas en la función en *while (k <= maxit && error > tol)* y en el ciclo for correspndiente a *compute stencil, residual and update*. Despues de analizar los multiples metodos posibles se opto por no utilizar *tasks* y por paralelizar unicamente el ciclo for correspondiente a *compute stencil, residual and update* dado que es el que presentaba un mejor desempeño. La paralelizacion de esta seccion se muestra en la *figura 2*, y se encuentra en el archivo *code/jacobi-p.c*.
 
 ``` c
 //Start parallel region
@@ -133,46 +96,36 @@ size = (m - 2) / n_threads;
     }
 }
 ```
-*Figura 1. Funcion secuencial jacobi.*
+*Figura 2. Fragmento paralelo de la funcion jacobi.*
 
 ## Resultados
 
-Para las pruebas se realizaron 30 ejecuciones de la version secuencial del codigo y 30 de la version paralela para 1, 2, 4, 8 y 16 hilos, la semilla para los numeros aleatorio corresponde a **1** y la cantidad de puntos a evaluar corresponde a **100M** de puntos.
+Para las pruebas se realizaron 30 ejecuciones de la version secuencial del codigo y 30 de la version paralela para 1, 2, 4, 8 y 16 hilos, se utilizo un *grid* de 2000 x 2000, la constante de helmholtz igual a 0.8, una tolerancia al error de 1e-15 y con 50 iteraciones.
 
-El promedio de tiempo de ejecucion y error para la version secuencial se presentan en la *Figura 6* y la *Figura 7*.
+El promedio de tiempo de ejecucion y MFlops para la version secuencial se presentan en la fila correspondiente a **seq** de la *Tabla 1*, y adicional en las filas siguientes se presentan para 1, 2, 4, 8 y 16 hilos para la version paralela del codigo, junto con esta informacion se encuentra el Speedup y Efficiency a cada una de estas.
 
-<div align='center'>
-    <img src='img/avr-time-seq.png' alt="1.709652 s" width=40%>
-    </br><i>Figura 6. Tiempo de ejecucion promedio secuencial.</i>
-    </br></br>
-    <img src='img/avr-error-seq.png' alt="0.00012999338462531539" width=40%>
-    </br><i>Figura 7. Error promedio secuencial.</i>
-    </br></br>
-</div>
+| Threads | Execution time | MFlops | Speedup | Efficiency |
+|---|---|---|---|---|---|
+| Seq  | 3.005042933 | 864.0252667 | 1 | 1 |
+| 1    | 2.817238133 | 921.6523333 | 1.066662735 | 1.0666627350 |
+| 2    | 2.329152967 | 1114.674333 | 1.290187023 | 0.6450935117 |
+| 4    | 1.854693967 | 1400.151333 | 1.620236539 | 0.4050591347 |
+| 8    | 1.498471300 | 1734.784333 | 2.005405731 | 0.2506757164 |
+| 16   | 1.436200167 | 1807.450000 | 2.092356625 | 0.1307722891 |
 
 ---
 
-Se presenta una tabla con los promedios con respecto a el tiempo de ejecución, el valor estimado de pi, el error de pi, el speedup y la eficiencia de la version paralela del programa en la *Tabla 1*, se entrega una grafica referente al speedup en la *Figura 8* y otra grafica referente a la eficiencia en la *Figura 9*.
-
-| Threads | Execution time | Estimated value of pi | Pi error | Speedup | Efficiency |
-|---|---|---|---|---|---|
-| 1  | 1.410390 | 3.14156520 | 0.00002745358979305834 | 1.212184 | 1.212184 |
-| 2  | 0.716609 | 3.14151692 | 0.00007573358979318101 | 2.385751 | 1.192876 |
-| 4  | 0.364095 | 3.14157176 | 0.00002089358979295852 | 4.695619 | 1.173905 |
-| 8  | 0.220137 | 3.14171376 | 0.00012110641020690593 | 7.766305 | 0.970788 |
-| 16 | 0.225630 | 3.14149312 | 0.00009953358979331028 | 7.577242 | 0.473578 |
-
-*Tabla 1. Promedio de los resultados.*
+Se presentan a continuacion las graficas de speedup y efficiency en la *figura 3* y *figura 4* correspondientemente.
 
 <div align='center'>
     <img src='img/Speedup.png' alt="Diagrama de lineas speedup" width=50%>
-    </br><i>Figura 8. Speedup.</i>
+    </br><i>Figura 3. Speedup.</i>
     </br></br>
     <img src='img/Efficiency.png' alt="Diagrama de lineas efficiency" width=50%>
-    </br><i>Figura 9. Efficiency.</i>
+    </br><i>Figura 4. Efficiency.</i>
     </br></br>
 </div>
 
 ## Conclusiones
 
-Durante la paralelización del codigo se encontro una complicación al hacer un primer acercamiento a la paralelizacion del codigo, dado que como se menciono antes la funcion **rand()** no es thread-safe, lo cual hacia que al ejecutar el codigo en más de un hilo tardara hasta 10 veces más que el tiempo que toma el programa secuencial, haciendo el cambio a una funcion thread-safe como **rand_r()** no solo se obtuvo un desempeño esperado, en cambio se obtuvo un speedup super lineal, se puede inferir que es dado a que la funcion **rand_r()** consume mucho menos tiempo de ejecución que la función **rand()**, adicionalmente la paralelización que se realizo en el codigo se evidencia que requiere muy poca intervención sobre el algoritmo a ejecutar, en cambio la mayor parte del trabajo de paralelizacion se le atribuye a las directivas usadas. Haciendo un analizis más completo sobre los resultados obtenidos vemos que al menos en un escenario donde los puntos a evaluar son unicamente *100M* vemos que la eficiencia empieza a decaer notablemente cuando se utilizan 8 hilos y en mayor medida cuando se utilizan 16 hilos.
+Se evidencia que a pesar de haber partido de diferentes enfoques para paralelizar el codigo objetivo, el acercamiento tomado puede no ser el más efectivo, dado que se hace evidente que la eficiencia con muliples cores disminuye drasticamente, teniendo eficiancias por debajo de *0.5* a partir de 4 cores.
