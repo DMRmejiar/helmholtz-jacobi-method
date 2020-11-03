@@ -230,7 +230,7 @@ int main(int argc, char* argv[])
 {
     double *u, *f, dx, dy;
     double r1;
-    int n_threads = 2;
+    int n_threads;
     /* Read info */
     //printf("Input num of threads :\n ");
     scanf("%d", &n_threads);
@@ -244,8 +244,8 @@ int main(int argc, char* argv[])
     scanf("%lf", &tol);
     //printf("Input mits - Maximum iterations for solver:\n ");
     scanf("%d", &mits);
-    //printf("-> %d, %d, %f, %f, %f, %d\n",
-    //n, m, alpha, relax, tol, mits);
+    //printf("-> %d, %d, %d, %f, %f, %f, %d\n",
+    //n_threads, n, m, alpha, relax, tol, mits);
 
     u = (double *) malloc(n*m*sizeof(double));
     f = (double *) malloc(n*m*sizeof(double));
