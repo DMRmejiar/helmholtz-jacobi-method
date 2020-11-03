@@ -47,6 +47,7 @@ by
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <omp.h>
 void jacobi (   
     int n,
     int m, 
@@ -57,7 +58,8 @@ void jacobi (
     double *u,
     double *f,
     double tol,
-    int maxit )
+    int maxit,
+    int n_threads )
 {
     int i,j,k;
     double error, resid, ax, ay, b;
@@ -74,6 +76,8 @@ void jacobi (
     b = -2.0/(dx*dx)-2.0/(dy*dy) - alpha; /* Central coeff */
     error = 10.0 * tol;
     k = 1;
+    #pragma omp parallel num_threads (n_threads)
+    #pragma omp single
     while (k <= maxit && error > tol) 
     {
         error = 0.0;
@@ -83,22 +87,47 @@ void jacobi (
             {
                 UOLD(j,i) = U(j,i);
             }
-        /* compute stencil, residual and update */
-        for (j=1; j<m-1; j++)
+        
+        //Start parallel region
+        int local_m, local_j, size, my_rank;
+        double local_error;
+        local_error = error;
+        size = (m - 2) / (n_threads);
+        
+        for (my_rank = 1; my_rank < n_threads; my_rank++) 
         {
-            for (i=1; i<n-1; i++)
+
+            #pragma omp task \
+                shared (error) \
+                private (i, resid, local_j, local_m ) \
+                firstprivate (local_error, my_rank)
             {
-                resid = (
-                    ax * (UOLD(j,i-1) + UOLD(j,i+1))
-                    + ay * (UOLD(j-1,i) + UOLD(j+1,i))
-                    + b * UOLD(j,i) - F(j,i)
-                    ) / b;
-                /* update solution */
-                U(j,i) = UOLD(j,i) - omega * resid;
-                /* accumulate residual error */
-                error =error + resid*resid;
+                local_m = size*(my_rank+1);
+                local_j = (size*my_rank)+1;
+                
+                if (my_rank == (n_threads - 1))
+                    local_m += (m-2)%n_threads;
+                
+                /* compute stencil, residual and update */
+                for (local_j; local_j<local_m; local_j++)
+                {
+                    for (i=1; i<n-1; i++)
+                    {
+                        resid = (
+                            ax * (UOLD(local_j,i-1) + UOLD(local_j,i+1))
+                            + ay * (UOLD(local_j-1,i) + UOLD(local_j+1,i))
+                            + b * UOLD(local_j,i) - F(local_j,i)
+                            ) / b;
+                        /* update solution */
+                        U(local_j,i) = UOLD(local_j,i) - omega * resid;
+                        /* accumulate residual error */
+                        local_error += resid*resid;
+                    }
+                }
+                error += local_error;
             }
         }
+        #pragma omp taskwait
         /* error check */
         k++;
         error = sqrt(error) /(n*m);
@@ -143,7 +172,7 @@ double tol, relax, alpha;
 void jacobi (int n, int m, double dx, double dy,
     double alpha, double omega,
     double *u, double *f,
-    double tol, int maxit );
+    double tol, int maxit, int n_threads );
 /******************************************************
 * Initializes data
 * Assumes exact solution is u(x,y) = (1-x^2)*(1-y^2)
@@ -210,7 +239,10 @@ int main(int argc, char* argv[])
 {
     double *u, *f, dx, dy;
     double r1;
+    int n_threads = 2;
     /* Read info */
+    printf("Input num of threads :\n ");
+    scanf("%d", &n_threads);
     printf("Input n,m - grid dimension in x,y direction :\n ");
     scanf("%d,%d", &n, &m);
     printf("Input alpha - Helmholts constant : \n");
@@ -236,7 +268,7 @@ int main(int argc, char* argv[])
 
     /* Solve Helmholtz eqiation */
     r1 = omp_get_wtime();
-    jacobi(n, m, dx, dy, alpha, relax, u,f, tol, mits);
+    jacobi(n, m, dx, dy, alpha, relax, u,f, tol, mits, n_threads);
     r1 = omp_get_wtime() - r1;
     printf(" elapsed time : %12.6f\n", r1);
     printf(" MFlops : %12.6g\n",
