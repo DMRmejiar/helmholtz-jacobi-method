@@ -223,7 +223,7 @@ void error_check(
         }
     }
     error = sqrt(error)/(n*m);
-    //printf("Solution Error : %g\n", error);
+    printf("Solution Error : %g\n", error);
 }
 
 int main(int argc, char* argv[])
@@ -232,20 +232,20 @@ int main(int argc, char* argv[])
     double r1;
     int n_threads;
     /* Read info */
-    //printf("Input num of threads :\n ");
+    printf("Input num of threads :\n ");
     scanf("%d", &n_threads);
-    //printf("Input n,m - grid dimension in x,y direction :\n ");
+    printf("Input n,m - grid dimension in x,y direction :\n ");
     scanf("%d,%d", &n, &m);
-    //printf("Input alpha - Helmholts constant : \n");
+    printf("Input alpha - Helmholts constant : \n");
     scanf("%lf", &alpha);
-    //printf("Input relax - Successive over-relaxation parameter:\n ");
+    printf("Input relax - Successive over-relaxation parameter:\n ");
     scanf("%lf", &relax);
-    //printf("Input tol - error tolerance for iterrative solver:\n");
+    printf("Input tol - error tolerance for iterrative solver:\n");
     scanf("%lf", &tol);
-    //printf("Input mits - Maximum iterations for solver:\n ");
+    printf("Input mits - Maximum iterations for solver:\n ");
     scanf("%d", &mits);
-    //printf("-> %d, %d, %d, %f, %f, %f, %d\n",
-    //n_threads, n, m, alpha, relax, tol, mits);
+    printf("-> %d, %d, %d, %f, %f, %f, %d\n",
+    n_threads, n, m, alpha, relax, tol, mits);
 
     u = (double *) malloc(n*m*sizeof(double));
     f = (double *) malloc(n*m*sizeof(double));
@@ -261,7 +261,7 @@ int main(int argc, char* argv[])
     r1 = omp_get_wtime();
     jacobi(n, m, dx, dy, alpha, relax, u,f, tol, mits, n_threads);
     r1 = omp_get_wtime() - r1;
-    printf("%12.6f", r1);
+    printf("%12.6f"\n, r1);
     printf("%12.6g\n",
     mits*(m-2)*(n-2)*0.000001*13 / r1);
     error_check(n, m, alpha, dx, dy, u, f);
